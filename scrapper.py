@@ -1,10 +1,9 @@
 from recipe_scrapers import scrap_me as scrape
 # https://github.com/hhursev/recipe-scraper
 
-def scrape_recipes():
+def main():
     recipe_urls = open("cake_recipe_urls.txt", "r")
     recipe_csv = open("cake_recipe.csv", "w")
-    recipe_csv.write("Title, Time, Ingredients, Instructions\n")
     for url in recipe_urls.readlines():
         scrape_recipe = scrape(url)
         title = scrape_recipe.title().replace(",", " ")
@@ -20,4 +19,4 @@ def scrape_recipes():
     recipe_csv.close()
 
 if __name__ == '__main__':
-    scrape_recipes()
+    main()
