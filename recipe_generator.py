@@ -3,7 +3,7 @@ from pandas import read_csv
 import re
 def main():
     cols = ['title', 'time', 'ingredients', 'instructions']
-    recipes_df = read_csv("cake_recipe.csv", names=cols)
+    recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
     recipes_df.ingredients[:1]
