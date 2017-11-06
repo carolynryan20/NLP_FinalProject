@@ -1,6 +1,10 @@
 import nltk
 from pandas import read_csv
 import re
+from random import randint
+import numpy as np
+from scipy.stats import norm
+
 def main():
     cols = ['title', 'time', 'ingredients', 'instructions']
     recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
@@ -12,7 +16,7 @@ def main():
     #output is a list of list of list
     #biggest level is the ingredient list for every recipes
     #second level is the ingredient list for a single recipe
-    #third and final level is ingredient, which is broken into quantity, amount and ingredient  
+    #third and final level is ingredient, which is broken into quantity, amount and ingredient
     def createBigList(recipes_df):
         #This list will have raw list of ingredients
         listOfIngredients = []
@@ -87,9 +91,43 @@ def main():
             #this will have the recipe for every cake
 
             bigList.append(recList)
-        print(bigList[3])
+        return bigList
 
 
-    createBigList(recipes_df)
+    def createProb(bigList):
+        probDict = {}
+        for i in range(0,len(bigList)):
+            for j in range(0,len(bigList[i])):
+                if bigList[i][j][2] not in probDict:
+                    quantityList = []
+                    quantityList.append(bigList[i][j][0])
+                    probDict[bigList[i][j][2]] = quantityList
+                else:
+                    probDict[bigList[i][j][2]].append(bigList[i][j][0])
+        return probDict
+
+
+    def returnQuant(probDict,food):
+        index = randint(0,len(probDict[food])-1)
+        return probDict[food][index]
+
+    def calcPval(probDict,food,quant):
+        sampleList = []
+        for i in range(0,1000):
+            sampleList.append(int(returnQuant(probDict,food)))
+        sampMean = np.mean(sampleList)
+        sampSD = np.std(sampleList)
+        zscore = (quant - sampMean)/sampSD
+        if zscore < 0:
+            pval = norm.cdf(zscore) + (1-norm.cdf(-zscore))
+        else:
+            pval = (1 - norm.cdf(zscore)) + norm.cdf(-zscore)
+
+        return pval
+
+    bigList = createBigList(recipes_df)
+    probDict = createProb(bigList)
+    print(calcPval(probDict,"egg",10))
+
 if __name__ == '__main__':
     main()
