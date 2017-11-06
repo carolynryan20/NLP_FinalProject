@@ -1,6 +1,7 @@
 import nltk
 from pandas import read_csv
 import re
+
 def main():
     cols = ['title', 'ingredients', 'instructions']
     recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
@@ -11,6 +12,11 @@ def main():
     # print("Recipes DF Ingredients",recipes_df.ingredients[:1])
     bigList = createBigList(recipes_df)
     cleanBigList(bigList)
+
+    for recipe in bigList:
+        for ingredient in recipe:
+            if 'package' in ' '.join(ingredient) and ingredient[1] != 'ounce' and ingredient[1] != 'g' and ingredient[1] != 'package':
+                print(ingredient[0], "\t\t\t", ingredient[1], "\t\t\t", ingredient[2])
 
     # print("Big List", bigList)
     # print("Big List Recipe", bigList[8])
@@ -107,26 +113,37 @@ def cleanBigList(bigList):
         recipe = bigList[recipe_index]
         for ingredient_index in range(len(recipe)):
             ingredient = recipe[ingredient_index]
+
             if 'package' in ingredient[2]:
-                if ingredient[0].isdigit():
-                    if 'ounce' in ingredient[1]:
+                recipe_amt = get_float(ingredient[0])
+                if recipe_amt:
+                    if 'ounce' in ingredient[1] or "-oz" in ingredient[1]:
                         new_ingredient = []
                         ingredient[1] = ingredient[1].replace("-", " ") # Fixes 1 8-ounce package
-                        ounce_amt = ingredient[1].split()[0]
-                        if isfloat(ingredient[0]) and isfloat(ounce_amt):
+                        ounce_amt = get_float(ingredient[1].split()[0])
+                        if recipe_amt and ounce_amt:
                             # print("Ingredient", ingredient[0], "Ounce amt", ounce_amt)
-                            new_ounce_amt = float(ingredient[0]) * float(ounce_amt)
-                            new_ingredient.append(new_ounce_amt)
+                            new_ounce_amt = recipe_amt * ounce_amt
+                            new_ingredient.append(str(new_ounce_amt)) # TODO if we make this float could be nice later
                             new_ingredient.append("ounce")
                             new_ingredient.append(ingredient[2])
                             bigList[recipe_index][ingredient_index] = new_ingredient
                         else:
-                            print("NOT IN IF", ingredient)
+                            # These ones are kinda weird, don't know why
+                            pass
+                            # print("NOT IN IF", ingredient)
                             # print("NOT IN IF Ingredient", ingredient[0], "Ounce amt", ounce_amt)
-
-
-                # print(ingredient)
-                # print(new_ingredient)
+                    elif len(ingredient[1].split()) > 1 and 'g' == ingredient[1].split()[1]:
+                        # print("Grams!", ingredient)
+                        new_ingredient = []
+                        gram_amt = get_float(ingredient[1].split()[0])
+                        if recipe_amt and gram_amt:
+                            # print("Ingredient", ingredient[0], "Ounce amt", ounce_amt)
+                            new_gram_amt = recipe_amt * gram_amt
+                            new_ingredient.append(str(new_gram_amt))  # TODO if we make this float could be nice later
+                            new_ingredient.append("g")
+                            new_ingredient.append(ingredient[2])
+                            bigList[recipe_index][ingredient_index] = new_ingredient
 
 def get_ingredient_list():
     user_input_ingredients = []
@@ -150,6 +167,26 @@ def isfloat(value):
         return True
     except ValueError:
         return False
+
+def frac_to_float(frac_str):
+    try:
+        num, den = frac_str.split('/')
+        if " " in num:
+            wh, num = num.split()
+        else:
+            wh = 0
+        result = float(wh) + float(num) / float(den)
+        return result
+    except ValueError:
+        return None
+
+def get_float(str):
+    if isfloat(str):
+        return float(str)
+    frac = frac_to_float(str)
+    if frac:
+        return frac
+    return None
 
 if __name__ == '__main__':
     main()
