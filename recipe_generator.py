@@ -1,22 +1,25 @@
 import nltk
 from pandas import read_csv
 import re
+from random import randint
+import numpy as np
+from scipy.stats import norm
 
 def main():
     cols = ['title', 'ingredients', 'instructions']
     recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
-    # print("Recipes DF",recipes_df)
-
-    # print("Recipes DF Ingredients",recipes_df.ingredients[:1])
+    # recipes_df.ingredients[:1]
     bigList = createBigList(recipes_df)
+    probDict = createProb(bigList)
+    print(calcPval(probDict, "egg", 10))
     cleanBigList(bigList)
 
-    for recipe in bigList:
-        for ingredient in recipe:
-            if 'package' in ' '.join(ingredient) and ingredient[1] != 'ounce' and ingredient[1] != 'g' and ingredient[1] != 'package':
-                print(ingredient[0], "\t\t\t", ingredient[1], "\t\t\t", ingredient[2])
+    # for recipe in bigList:
+    #     for ingredient in recipe:
+    #         if 'package' in ' '.join(ingredient) and ingredient[1] != 'ounce' and ingredient[1] != 'g' and ingredient[1] != 'package':
+    #             print(ingredient[0], "\t\t\t", ingredient[1], "\t\t\t", ingredient[2])
 
     # print("Big List", bigList)
     # print("Big List Recipe", bigList[8])
@@ -93,6 +96,9 @@ def createBigList(recipes_df):
                 if ingredientStr[len(ingredientStr)-1:len(ingredientStr)] == ' ':
                     ingredientStr = ingredientStr[0:len(ingredientStr)-1]
 
+
+
+
                 #appends quantity, amount, and ingredient to list
                 ingList.append(numberStr)
                 ingList.append(amountStr2)
@@ -105,8 +111,37 @@ def createBigList(recipes_df):
         #this will have the recipe for every cake
 
         bigList.append(recList)
-    # print(bigList[3])
     return bigList
+
+def createProb(bigList):
+    probDict = {}
+    for i in range(0,len(bigList)):
+        for j in range(0,len(bigList[i])):
+            if bigList[i][j][2] not in probDict:
+                quantityList = []
+                quantityList.append(bigList[i][j][0])
+                probDict[bigList[i][j][2]] = quantityList
+            else:
+                probDict[bigList[i][j][2]].append(bigList[i][j][0])
+    return probDict
+
+def returnQuant(probDict,food):
+    index = randint(0,len(probDict[food])-1)
+    return (get_float(probDict[food][index]))
+
+def calcPval(probDict,food,quant):
+    sampleList = []
+    for i in range(0,1000):
+        sampleList.append(int(returnQuant(probDict,food)))
+    sampMean = np.mean(sampleList)
+    sampSD = np.std(sampleList)
+    zscore = (quant - sampMean)/sampSD
+    if zscore < 0:
+        pval = norm.cdf(zscore) + (1-norm.cdf(-zscore))
+    else:
+        pval = (1 - norm.cdf(zscore)) + norm.cdf(-zscore)
+
+    return pval
 
 def cleanBigList(bigList):
     for recipe_index in range(len(bigList)):
