@@ -3,19 +3,21 @@ from pandas import read_csv
 import re
 def main():
     cols = ['title', 'ingredients', 'instructions']
-    recipes_df = read_csv("recipes.csv", names=cols)
+    recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
     # print("Recipes DF",recipes_df)
 
     # print("Recipes DF Ingredients",recipes_df.ingredients[:1])
     bigList = createBigList(recipes_df)
-    print("Big List", bigList)
-    print("Big List Recipe", bigList[8])
-    print("Big List Ingredient", bigList[8][0])
-    print("Big List Ingredient Quantity", bigList[8][0][0])
-    print("Big List Ingredient Measurement", bigList[8][0][1])
-    print("Big List Ingredient Type", bigList[8][0][2])
+    cleanBigList(bigList)
+
+    # print("Big List", bigList)
+    # print("Big List Recipe", bigList[8])
+    # print("Big List Ingredient", bigList[8][0])
+    # print("Big List Ingredient Quantity", bigList[8][0][0])
+    # print("Big List Ingredient Measurement", bigList[8][0][1])
+    # print("Big List Ingredient Type", bigList[8][0][2])
 
 def createBigList(recipes_df):
     '''
@@ -97,8 +99,34 @@ def createBigList(recipes_df):
         #this will have the recipe for every cake
 
         bigList.append(recList)
-    print(bigList[3])
+    # print(bigList[3])
     return bigList
+
+def cleanBigList(bigList):
+    for recipe_index in range(len(bigList)):
+        recipe = bigList[recipe_index]
+        for ingredient_index in range(len(recipe)):
+            ingredient = recipe[ingredient_index]
+            if 'package' in ingredient[2]:
+                if ingredient[0].isdigit():
+                    if 'ounce' in ingredient[1]:
+                        new_ingredient = []
+                        ingredient[1] = ingredient[1].replace("-", " ") # Fixes 1 8-ounce package
+                        ounce_amt = ingredient[1].split()[0]
+                        if isfloat(ingredient[0]) and isfloat(ounce_amt):
+                            # print("Ingredient", ingredient[0], "Ounce amt", ounce_amt)
+                            new_ounce_amt = float(ingredient[0]) * float(ounce_amt)
+                            new_ingredient.append(new_ounce_amt)
+                            new_ingredient.append("ounce")
+                            new_ingredient.append(ingredient[2])
+                            bigList[recipe_index][ingredient_index] = new_ingredient
+                        else:
+                            print("NOT IN IF", ingredient)
+                            # print("NOT IN IF Ingredient", ingredient[0], "Ounce amt", ounce_amt)
+
+
+                # print(ingredient)
+                # print(new_ingredient)
 
 def get_ingredient_list():
     user_input_ingredients = []
@@ -114,6 +142,14 @@ def get_ingredient_list():
     # Return complete ingredients
 
     get_ingredient_list()
+
+def isfloat(value):
+    # https://stackoverflow.com/questions/736043/checking-if-a-string-can-be-converted-to-float-in-python
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
 if __name__ == '__main__':
     main()
