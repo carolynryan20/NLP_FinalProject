@@ -1,5 +1,8 @@
+'''
+NOT USING THIS DON"T
+'''
+
 from pandas import read_csv
-import re
 from nltk import pos_tag
 from nltk.grammar import CFG
 from nltk.parse.generate import generate
@@ -38,39 +41,44 @@ def construct_cfg():
     # print(the_rest_list)
 
     easy_cfg = '''
-S -> P INS
-P -> PTOT TEMP PERIOD
-PTOT -> 'Preheat the oven to'
+                S -> P INS
+                P -> PTOT TEMP PERIOD
+                PTOT -> 'Preheat the oven to'
+                
+                INS -> V DET INGR PERIOD | INS INS
+                DET -> 'the'
+                INGR -> 'eggs' | 'flour' | 'sugar'
+                PERIOD -> '.'
+                V -> {}
+                TEMP -> {}
+               '''
 
-INS -> V DET INGR PERIOD | INS INS
-DET -> 'the'
-INGR -> 'eggs' | 'flour' | 'sugar'
-PERIOD -> '.'
-'''
-
-    verb_rule = "V -> "
+    verb_rule = ""
     for verb in verb_list:
         # easy_cfg += "\nV -> '{}'".format(verb)
         verb_rule += " '{}' |".format(verb)
 
-    temp_rule = "TEMP -> "
+    temp_rule = ""
     for temp in temp_list:
         # easy_cfg += "\nTEMP -> '{}'".format(temp)
         temp_rule += " '{}' |".format(temp)
 
-    easy_cfg += verb_rule[:-1] + "\n"
-    easy_cfg += temp_rule[:-1] + "\n"
+    easy_cfg = easy_cfg.format(verb_rule, temp_rule)
 
     print(easy_cfg)
     with open("easy_cfg.txt", "w") as cfg_file:
         cfg_file.write(easy_cfg)
 
 if __name__ == '__main__':
+    print("WE ARE NOT USING THIS PLS STOP")
     # construct_cfg()
 
     with open("easy_cfg.txt", "r") as cfg_file:
         easy_cfg = cfg_file.read()
     my_easy_cfg = CFG.fromstring(easy_cfg)
-    print(easy_cfg)
-    for sentence in generate(my_easy_cfg, depth = 4):
-        print(' '.join(sentence))
+    # print(easy_cfg)
+    # for sentence in generate(my_easy_cfg, depth = 4):
+    #     print(' '.join(sentence))
+
+    print(len(list(generate(my_easy_cfg, depth=10))))
+    print(list(generate(my_easy_cfg, depth=10))[164000])

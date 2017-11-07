@@ -1,7 +1,6 @@
-import nltk
 from pandas import read_csv
 import re
-from random import randint
+from random import randint, choice
 import numpy as np
 from scipy.stats import norm
 
@@ -12,9 +11,14 @@ def main():
 
     # recipes_df.ingredients[:1]
     bigList = createBigList(recipes_df)
-    probDict = createProb(bigList)
-    print(calcPval(probDict, "egg", 10))
-    cleanBigList(bigList)
+    probDictAmt = createProbAmt(bigList)
+    probDictUnits = createProbUnits(bigList)
+    get_ingredient_list(probDictAmt, probDictUnits)
+
+    # print(calcPval(probDict, "egg", 10))
+    #
+    # cleanBigList(bigList)
+    # print(returnQuant(probDict, "egg"))
 
     # for recipe in bigList:
     #     for ingredient in recipe:
@@ -96,9 +100,6 @@ def createBigList(recipes_df):
                 if ingredientStr[len(ingredientStr)-1:len(ingredientStr)] == ' ':
                     ingredientStr = ingredientStr[0:len(ingredientStr)-1]
 
-
-
-
                 #appends quantity, amount, and ingredient to list
                 ingList.append(numberStr)
                 ingList.append(amountStr2)
@@ -113,7 +114,7 @@ def createBigList(recipes_df):
         bigList.append(recList)
     return bigList
 
-def createProb(bigList):
+def createProbAmt(bigList):
     probDict = {}
     for i in range(0,len(bigList)):
         for j in range(0,len(bigList[i])):
@@ -125,9 +126,26 @@ def createProb(bigList):
                 probDict[bigList[i][j][2]].append(bigList[i][j][0])
     return probDict
 
-def returnQuant(probDict,food):
+def createProbUnits(bigList):
+    probDict = {}
+    for i in range(0, len(bigList)):
+        for j in range(0, len(bigList[i])):
+            units = bigList[i][j][1]
+            if bigList[i][j][2] not in probDict:
+                quantityList = []
+                quantityList.append(units)
+                probDict[bigList[i][j][2]] = quantityList
+            else:
+                probDict[bigList[i][j][2]].append(units)
+    return probDict
+
+def returnQuant(probDict, food):
     index = randint(0,len(probDict[food])-1)
     return (get_float(probDict[food][index]))
+
+def returnUnit(probDict, food):
+    index = randint(0, len(probDict[food]) - 1)
+    return (probDict[food][index])
 
 def calcPval(probDict,food,quant):
     sampleList = []
@@ -180,20 +198,33 @@ def cleanBigList(bigList):
                             new_ingredient.append(ingredient[2])
                             bigList[recipe_index][ingredient_index] = new_ingredient
 
-def get_ingredient_list():
-    user_input_ingredients = []
+def get_ingredient_list(probDictAmt, probDictUnits):
+    ingredient_dict = {}
     ingredient = input("Enter an ingredient.  Hit 'q' when done entering ingredients. ")
     while ingredient != 'q' and ingredient:
-        user_input_ingredients.append(ingredient)
+        if ingredient in probDictAmt and ingredient not in ingredient_dict:
+            amt = returnQuant(probDictAmt, ingredient)
+            units = returnUnit(probDictUnits, ingredient)
+            print("Use {} {} {} in recipe".format(amt, units, ingredient)) # NEED UNITS
+            ingredient_dict[ingredient] = [units, amt]
+        elif ingredient in ingredient_dict:
+            print("You have already used this in your cake!")
+        else:
+            print("You can't put that in a cake!")
         ingredient = input("Enter an ingredient.  Hit 'q' when done entering ingredients. ")
 
-    print(user_input_ingredients)
+    extra = int(input("How many more ingredients would you like in your cake? "))
+    count = 0
+    while count < extra:
+        ingredient = choice(list(probDictAmt.keys()))
+        amt = returnQuant(probDictAmt, ingredient)
+        units = returnUnit(probDictUnits, ingredient)
+        if ingredient not in ingredient_dict:
+            ingredient_dict[ingredient] = [units, amt]
+            count += 1
 
-    # Choose ingredient amounts
-    # Select more ingredients if need be
-    # Return complete ingredients
-
-    get_ingredient_list()
+    print(ingredient_dict)
+    return ingredient_dict
 
 def isfloat(value):
     # https://stackoverflow.com/questions/736043/checking-if-a-string-can-be-converted-to-float-in-python
