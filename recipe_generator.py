@@ -10,27 +10,17 @@ def main():
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
     # recipes_df.ingredients[:1]
+
+    # Big List [Entire Recipe][Single Ingredient][0 = Amt, 1 = Unit, 2 = Food/Ingredient]
     bigList = createBigList(recipes_df)
     probDictAmt = createProbAmt(bigList)
     probDictUnits = createProbUnits(bigList)
-    get_ingredient_list(probDictAmt, probDictUnits)
+
+    # Dict of form {ingredient: [unit of measurement, amt]}
+    ingredient_dict = get_ingredient_dict(probDictAmt, probDictUnits)
 
     # print(calcPval(probDict, "egg", 10))
-    #
-    # cleanBigList(bigList)
     # print(returnQuant(probDict, "egg"))
-
-    # for recipe in bigList:
-    #     for ingredient in recipe:
-    #         if 'package' in ' '.join(ingredient) and ingredient[1] != 'ounce' and ingredient[1] != 'g' and ingredient[1] != 'package':
-    #             print(ingredient[0], "\t\t\t", ingredient[1], "\t\t\t", ingredient[2])
-
-    # print("Big List", bigList)
-    # print("Big List Recipe", bigList[8])
-    # print("Big List Ingredient", bigList[8][0])
-    # print("Big List Ingredient Quantity", bigList[8][0][0])
-    # print("Big List Ingredient Measurement", bigList[8][0][1])
-    # print("Big List Ingredient Type", bigList[8][0][2])
 
 def createBigList(recipes_df):
     '''
@@ -162,6 +152,11 @@ def calcPval(probDict,food,quant):
     return pval
 
 def cleanBigList(bigList):
+    '''
+    When recipe calls for 2 (8 ounce) packages <INGREDIENT>, we want 16 ounce <INGREDIENT>
+    :param bigList: Ingredient big list
+    :return: Big list with above change
+    '''
     for recipe_index in range(len(bigList)):
         recipe = bigList[recipe_index]
         for ingredient_index in range(len(recipe)):
@@ -198,7 +193,13 @@ def cleanBigList(bigList):
                             new_ingredient.append(ingredient[2])
                             bigList[recipe_index][ingredient_index] = new_ingredient
 
-def get_ingredient_list(probDictAmt, probDictUnits):
+def get_ingredient_dict(probDictAmt, probDictUnits):
+    '''
+    Function that allows user to input ingredients
+    :param probDictAmt: {ingredient: [list of possible amounts]}
+    :param probDictUnits: {ingredient: [list of possible units used for that ingredient]}
+    :return: ingredient_dict: {ingredient: [units, amt]}
+    '''
     ingredient_dict = {}
     ingredient = input("Enter an ingredient.  Hit 'q' when done entering ingredients. ")
     while ingredient != 'q' and ingredient:
@@ -227,7 +228,12 @@ def get_ingredient_list(probDictAmt, probDictUnits):
     return ingredient_dict
 
 def isfloat(value):
-    # https://stackoverflow.com/questions/736043/checking-if-a-string-can-be-converted-to-float-in-python
+    '''
+    Returns whether or not a value can be cast to a float
+    https://stackoverflow.com/questions/736043/checking-if-a-string-can-be-converted-to-float-in-python
+    :param value: str
+    :return: boolean, True = can be a float
+    '''
     try:
         float(value)
         return True
@@ -235,6 +241,11 @@ def isfloat(value):
         return False
 
 def frac_to_float(frac_str):
+    '''
+    Given a string, returns the a float if string is fraction
+    :param frac_str: str
+    :return: float if possible, none otherwise
+    '''
     try:
         num, den = frac_str.split('/')
         if " " in num:
@@ -247,6 +258,11 @@ def frac_to_float(frac_str):
         return None
 
 def get_float(str):
+    '''
+    Given a string, converts it to a float
+    :param str: can be int, decimal, or fraction (in a string)
+    :return: float if conversion possible, None else
+    '''
     if isfloat(str):
         return float(str)
     frac = frac_to_float(str)
