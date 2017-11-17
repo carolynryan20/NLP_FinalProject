@@ -3,21 +3,48 @@ import re
 from random import randint, choice
 import numpy as np
 from scipy.stats import norm
+from nltk.tokenize import sent_tokenize
 
 def main():
     cols = ['title', 'ingredients', 'instructions']
     recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
+    instruction_corpus = []
+    for i in range(len(recipes_df.instructions)):
+    	instruction_corpus.append(recipes_df.instructions.loc[i])
+
     # recipes_df.ingredients[:1]
 
     # Big List [Entire Recipe][Single Ingredient][0 = Amt, 1 = Unit, 2 = Food/Ingredient]
     bigList = createBigList(recipes_df)
+
+    ingredient_list = set()
+    for i in range(len(bigList)):
+      for j in range(len(bigList[i])):
+        ingredient_list.add(bigList[i][j][2])
     probDictAmt = createProbAmt(bigList)
     probDictUnits = createProbUnits(bigList)
 
     # Dict of form {ingredient: [unit of measurement, amt]}
     ingredient_dict = get_ingredient_dict(probDictAmt, probDictUnits)
+
+    output_sents = []
+    for k, v in ingredient_dict.items():
+        ingredient_sents = []
+        for recipe in instruction_corpus:
+            recipe_sents = sent_tokenize(recipe)
+            for sentence in recipe_sents:
+                if k in str(sentence):
+                    ingredient_sents.append(sentence)
+        if ingredient_sents:
+            output_sents.append(choice(ingredient_sents))
+        else:
+            print('Could not generate instructions for ingredient ' + k + '!')
+		    
+    print(output_sents)		    
+		
+
 
     # print(calcPval(probDict, "egg", 10))
     # print(returnQuant(probDict, "egg"))
