@@ -3,6 +3,8 @@ import re
 from random import randint, choice
 import numpy as np
 from scipy.stats import norm
+from nltk.corpus import wordnet as wn # Where we took words from
+from string import punctuation
 
 def main():
     cols = ['title', 'ingredients', 'instructions']
@@ -36,6 +38,7 @@ def createBigList(recipes_df):
     listOfIngredients = []
     #This list will have list of lists where ingredients are seperated using regexs
     bigList = []
+    known_food_list = createKnownFoodList()
 
     #iterates through entire corpus of recipies
     for j in range(0,len(recipes_df.ingredients)):
@@ -54,6 +57,7 @@ def createBigList(recipes_df):
         #iterates through all ingredients for a single recipe
         for i in range(0,len(listOfIngredients[j])):
             #if match
+            ingList = []
             if numbers.match(listOfIngredients[j][i]):
                 #used to append each element of an ingredient
                 ingList = []
@@ -85,10 +89,31 @@ def createBigList(recipes_df):
                 if amountStr2[len(amountStr2)-1:len(amountStr2)] == 's':
                     amountStr2 = amountStr2[0:len(amountStr2)-1]
 
+                if len(amountStr2.split()) > 1 and not "/" in amountStr2.split()[1]:
+                    amountStr2 = amountStr2.split()[0]
+
                 numberStr = numberStr[0:len(numberStr)-1]
 
                 if ingredientStr[len(ingredientStr)-1:len(ingredientStr)] == ' ':
                     ingredientStr = ingredientStr[0:len(ingredientStr)-1]
+
+                ingredientStr = ''.join(ch for ch in ingredientStr if ch not in punctuation)
+                if ingredientStr not in known_food_list:
+                    ingredientStr = ingredientStr.lower()
+                    ingredientStr1 = ''
+                    for food in known_food_list:
+                        if food in ingredientStr.split() or food+"s" in ingredientStr.split(): #covers some plurality
+                            ingredientStr1 += food + " "
+                    if ingredientStr1 == '' and ingredientStr != '':
+                        # print(ingredientStr, numberStr, amountStr, sep='\t')
+                        continue
+
+                    # Reorders so juice orange should become orange juice, vanilla extract, cream cheese
+                    ingredientStr2 = ''
+                    for word in ingredientStr.split():
+                        if word in ingredientStr1:
+                            ingredientStr2 += word + " "
+                    ingredientStr = ingredientStr2
 
                 #appends quantity, amount, and ingredient to list
                 ingList.append(numberStr)
@@ -97,17 +122,28 @@ def createBigList(recipes_df):
 
             #appends the list of the three factors to another list
             #this will have all the ingredients for a single recipe
-            recList.append(ingList)
+            if ingList:
+                recList.append(ingList)
         #appends that list to a big list
         #this will have the recipe for every cake
+        if recList:
+            bigList.append(recList)
 
-        bigList.append(recList)
+    # Good way to see ingredients TODO delete
+    with open("biglist.csv", 'w') as f:
+        for recipe in bigList:
+            for ing in recipe:
+                f.write(",".join(ing))
+                f.write("\n")
     return bigList
 
 def createProbAmt(bigList):
     probDict = {}
     for i in range(0,len(bigList)):
         for j in range(0,len(bigList[i])):
+            if len(bigList[i][j]) < 3:
+                print(bigList[i][j])
+                continue
             if bigList[i][j][2] not in probDict:
                 quantityList = []
                 quantityList.append(bigList[i][j][0])
@@ -170,7 +206,6 @@ def cleanBigList(bigList):
                         ingredient[1] = ingredient[1].replace("-", " ") # Fixes 1 8-ounce package
                         ounce_amt = get_float(ingredient[1].split()[0])
                         if recipe_amt and ounce_amt:
-                            # print("Ingredient", ingredient[0], "Ounce amt", ounce_amt)
                             new_ounce_amt = recipe_amt * ounce_amt
                             new_ingredient.append(str(new_ounce_amt)) # TODO if we make this float could be nice later
                             new_ingredient.append("ounce")
@@ -179,14 +214,10 @@ def cleanBigList(bigList):
                         else:
                             # These ones are kinda weird, don't know why
                             pass
-                            # print("NOT IN IF", ingredient)
-                            # print("NOT IN IF Ingredient", ingredient[0], "Ounce amt", ounce_amt)
                     elif len(ingredient[1].split()) > 1 and 'g' == ingredient[1].split()[1]:
-                        # print("Grams!", ingredient)
                         new_ingredient = []
                         gram_amt = get_float(ingredient[1].split()[0])
                         if recipe_amt and gram_amt:
-                            # print("Ingredient", ingredient[0], "Ounce amt", ounce_amt)
                             new_gram_amt = recipe_amt * gram_amt
                             new_ingredient.append(str(new_gram_amt))  # TODO if we make this float could be nice later
                             new_ingredient.append("g")
@@ -220,6 +251,7 @@ def get_ingredient_dict(probDictAmt, probDictUnits):
         ingredient = choice(list(probDictAmt.keys()))
         amt = returnQuant(probDictAmt, ingredient)
         units = returnUnit(probDictUnits, ingredient)
+        print(ingredient, amt, units)
         if ingredient not in ingredient_dict:
             ingredient_dict[ingredient] = [units, amt]
             count += 1
@@ -269,6 +301,20 @@ def get_float(str):
     if frac:
         return frac
     return None
+
+def createKnownFoodList():
+    '''
+    Returns list of known foods
+    :return:
+    '''
+    with open("new_food_list.txt", 'r') as f:
+        _known_food_list = f.readlines()
+
+    known_food_list = []
+    for food in _known_food_list:
+        known_food_list.append(food[:-1])
+    return known_food_list
+
 
 if __name__ == '__main__':
     main()
