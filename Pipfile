@@ -10,6 +10,7 @@ name = "pypi"
 nltk = "*"
 pandas = "*"
 recipe-scraper = {git = "git://github.com/hhursev/recipe-scraper.git"}
+scipy = "*"
 
 
 [requires]
