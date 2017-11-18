@@ -4,7 +4,6 @@ from random import randint, choice
 import numpy as np
 from scipy.stats import norm
 from nltk.tokenize import sent_tokenize
-from nltk.corpus import wordnet as wn # Where we took words from
 from string import punctuation
 
 def main():
@@ -14,9 +13,7 @@ def main():
 
     instruction_corpus = []
     for i in range(len(recipes_df.instructions)):
-    	instruction_corpus.append(recipes_df.instructions.loc[i])
-
-    # recipes_df.ingredients[:1]
+        instruction_corpus.append(recipes_df.instructions.loc[i])
 
     # Big List [Entire Recipe][Single Ingredient][0 = Amt, 1 = Unit, 2 = Food/Ingredient]
     bigList = createBigList(recipes_df)
@@ -43,13 +40,10 @@ def main():
             output_sents.append(choice(ingredient_sents))
         else:
             print('Could not generate instructions for ingredient ' + k + '!')
-		    
-    print(output_sents)		    
-		
 
+    print(output_sents)
 
-    # print(calcPval(probDict, "egg", 10))
-    # print(returnQuant(probDict, "egg"))
+    extract_ingredients(output_sents, ingredient_dict)
 
 def createBigList(recipes_df):
     '''
@@ -60,7 +54,6 @@ def createBigList(recipes_df):
         second level is the ingredient list for a single recipe
         third and final level is ingredient, which is broken into quantity, amount and ingredient
     '''
-
     #This list will have raw list of ingredients
     listOfIngredients = []
     #This list will have list of lists where ingredients are seperated using regexs
@@ -124,23 +117,9 @@ def createBigList(recipes_df):
                 if ingredientStr[len(ingredientStr)-1:len(ingredientStr)] == ' ':
                     ingredientStr = ingredientStr[0:len(ingredientStr)-1]
 
-                ingredientStr = ''.join(ch for ch in ingredientStr if ch not in punctuation)
-                if ingredientStr not in known_food_list:
-                    ingredientStr = ingredientStr.lower()
-                    ingredientStr1 = ''
-                    for food in known_food_list:
-                        if food in ingredientStr.split() or food+"s" in ingredientStr.split(): #covers some plurality
-                            ingredientStr1 += food + " "
-                    if ingredientStr1 == '' and ingredientStr != '':
-                        # print(ingredientStr, numberStr, amountStr, sep='\t')
-                        continue
-
-                    # Reorders so juice orange should become orange juice, vanilla extract, cream cheese
-                    ingredientStr2 = ''
-                    for word in ingredientStr.split():
-                        if word in ingredientStr1:
-                            ingredientStr2 += word + " "
-                    ingredientStr = ingredientStr2
+                ingredientStr = find_valid_foods(ingredientStr, known_food_list)
+                if not ingredientStr:
+                    continue
 
                 #appends quantity, amount, and ingredient to list
                 ingList.append(numberStr)
@@ -157,11 +136,17 @@ def createBigList(recipes_df):
             bigList.append(recList)
 
     # Good way to see ingredients TODO delete
-    with open("biglist.csv", 'w') as f:
-        for recipe in bigList:
-            for ing in recipe:
-                f.write(",".join(ing))
-                f.write("\n")
+    ing_list = []
+    for rec in bigList:
+        for ing in rec:
+            if (len(ing) > 2) and ing[2] not in ing_list:
+                ing_list.append(ing[2])
+    ing_list.sort()
+
+    with open("biglist.txt", 'w') as f:
+        for ing in ing_list:
+            f.write(ing)
+            f.write("\n")
     return bigList
 
 def createProbAmt(bigList):
@@ -278,12 +263,12 @@ def get_ingredient_dict(probDictAmt, probDictUnits):
         ingredient = choice(list(probDictAmt.keys()))
         amt = returnQuant(probDictAmt, ingredient)
         units = returnUnit(probDictUnits, ingredient)
-        print(ingredient, amt, units)
+        # print(ingredient, amt, units)
         if ingredient not in ingredient_dict:
             ingredient_dict[ingredient] = [units, amt]
             count += 1
 
-    print(ingredient_dict)
+    # print(ingredient_dict)
     return ingredient_dict
 
 def isfloat(value):
@@ -339,9 +324,54 @@ def createKnownFoodList():
 
     known_food_list = []
     for food in _known_food_list:
-        known_food_list.append(food[:-1])
+        if food[-1] == '\n':
+            food = food[:-1]
+        known_food_list.append(food.lower())
     return known_food_list
 
+def find_valid_foods(ingredientStr, known_food_list):
+    '''
+    Edits some of the ingredients into more recognizable ingredients
+    :param ingredientStr:
+    :param known_food_list:
+    :return:
+    '''
+    if ingredientStr == '':
+        return None
+    ingredientStr = ingredientStr.lower()
+    ingredientStr = ''.join(ch for ch in ingredientStr if ch not in punctuation)
+    if ingredientStr in known_food_list:
+        return ingredientStr
+
+    ingredientStr1 = ''
+    for food in known_food_list:
+        if food in ingredientStr.split() or food + "s" in ingredientStr.split():  # covers some plurality
+            ingredientStr1 += food + " "
+
+    if ingredientStr1 == '' and ingredientStr != '':
+        return None
+
+    # Reorders so juice orange should become orange juice, vanilla extract, cream cheese
+    ingredientStr2 = ''
+    for word in ingredientStr.split():
+        if word in ingredientStr1 and word not in ingredientStr2:
+            ingredientStr2 += word + " "
+
+    if ingredientStr2 != '':
+        if ingredientStr2[-1] == " ":
+            ingredientStr2 = ingredientStr2[:-1]
+        return ingredientStr2
+    else:
+        return None
+
+def extract_ingredients(output_sents, ingredient_dict):
+    known_food_list = createKnownFoodList()
+    for sent in output_sents:
+        for food in known_food_list:
+            if food in sent:
+                returnQuant(probDict, food)
+                retur(food)
+    pass
 
 if __name__ == '__main__':
     main()
