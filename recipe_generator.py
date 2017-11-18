@@ -12,10 +12,6 @@ def main():
     recipes_df = read_csv("recipes.csv", names=cols, encoding='latin-1')
     # can get all columns with recipes_df.title, recipes_df.time, recipes_df.ingredients, recipes_df.instructions
 
-    instruction_corpus = []
-    for i in range(len(recipes_df.instructions)):
-    	instruction_corpus.append(recipes_df.instructions.loc[i])
-
     # recipes_df.ingredients[:1]
 
     # Big List [Entire Recipe][Single Ingredient][0 = Amt, 1 = Unit, 2 = Food/Ingredient]
@@ -30,8 +26,27 @@ def main():
 
     # Dict of form {ingredient: [unit of measurement, amt]}
     ingredient_dict = get_ingredient_dict(probDictAmt, probDictUnits)
+    generate_output_sentences(recipes_df, ingredient_dict)
+
+    		
+    # print(calcPval(probDict, "egg", 10))
+    # print(returnQuant(probDict, "egg"))
+
+def generate_output_sentences(recipes_df, ingredient_dict):
+    instruction_corpus = []
+    for i in range(len(recipes_df.instructions)):
+    	instruction_corpus.append(recipes_df.instructions.loc[i])
 
     output_sents = []
+    preheat_sents = []
+    for recipe in instruction_corpus:
+        recipe_sents = sent_tokenize(recipe)
+        for sentence in recipe_sents:
+            sentence = sentence.split(' ')
+            if ('preheat' in str(sentence[0])) or ('Preheat' in str(sentence[0])):
+                preheat_sents.append((' ').join(sentence))
+    output_sents.append(choice(preheat_sents))
+
     for k, v in ingredient_dict.items():
         ingredient_sents = []
         for recipe in instruction_corpus:
@@ -45,11 +60,8 @@ def main():
             print('Could not generate instructions for ingredient ' + k + '!')
 		    
     print(output_sents)		    
-		
 
 
-    # print(calcPval(probDict, "egg", 10))
-    # print(returnQuant(probDict, "egg"))
 
 def createBigList(recipes_df):
     '''
