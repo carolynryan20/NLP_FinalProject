@@ -326,7 +326,6 @@ class RecipeGenerator:
             if ingredient_sents:
                 output_sents.append(choice(ingredient_sents))
             else:
-                print('Could not generate instructions for ingredient ' + k + '!')
                 pop_list.append(k)
 
         for k in pop_list:
@@ -366,10 +365,12 @@ class RecipeGenerator:
 
         print()
         print("Instructions")
+        step_count = 1
         for sentence in output_sents:
-            print(sentence)
+            print(str(step_count) + '. ' + sentence)
+            step_count += 1
 
-        print("Bake until done.")
+        print(str(step_count) + '. ' + "Bake until done.")
 
     def generate_recipe(self, match_ingredients_to_instructions = False):
         ingredient_dict = self.get_ingredients_from_user()
@@ -424,6 +425,7 @@ def main():
     user_continue = ''
     while user_continue != 'q':
         recipe_generator.generate_recipe(True)
+        print()
         user_continue = input("Enter anything but q to continue ")
 
 if __name__ == '__main__':
