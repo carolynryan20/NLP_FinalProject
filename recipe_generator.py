@@ -27,8 +27,25 @@ def main():
 
     # Dict of form {ingredient: [unit of measurement, amt]}
     ingredient_dict = get_ingredient_dict(probDictAmt, probDictUnits)
+    output_sents = generate_output_sentences(recipes_df, ingredient_dict)
+
+    extract_ingredients(output_sents, ingredient_dict)
+
+def generate_output_sentences(recipes_df, ingredient_dict):
+    instruction_corpus = []
+    for i in range(len(recipes_df.instructions)):
+        instruction_corpus.append(recipes_df.instructions.loc[i])
 
     output_sents = []
+    preheat_sents = []
+    for recipe in instruction_corpus:
+        recipe_sents = sent_tokenize(recipe)
+        for sentence in recipe_sents:
+            sentence = sentence.split(' ')
+            if ('preheat' in str(sentence[0])) or ('Preheat' in str(sentence[0])):
+                preheat_sents.append((' ').join(sentence))
+    output_sents.append(choice(preheat_sents))
+
     for k, v in ingredient_dict.items():
         ingredient_sents = []
         for recipe in instruction_corpus:
@@ -42,8 +59,7 @@ def main():
             print('Could not generate instructions for ingredient ' + k + '!')
 
     print(output_sents)
-
-    extract_ingredients(output_sents, ingredient_dict)
+    return output_sents
 
 def createBigList(recipes_df):
     '''
@@ -369,8 +385,7 @@ def extract_ingredients(output_sents, ingredient_dict):
     for sent in output_sents:
         for food in known_food_list:
             if food in sent:
-                returnQuant(probDict, food)
-                retur(food)
+                pass
     pass
 
 if __name__ == '__main__':
