@@ -328,6 +328,16 @@ class RecipeGenerator:
             else:
                 pop_list.append(k)
 
+        bake_sents = []
+        for recipe in instruction_corpus:
+            recipe_sents = sent_tokenize(recipe)
+            for sentence in recipe_sents:
+                sentence = sentence.split(' ')
+                if ('bake' in str(sentence[0])) or ('Bake' in str(sentence[0])):
+                    bake_sents.append((' ').join(sentence))
+        output_sents.append(choice(bake_sents))
+
+
         for k in pop_list:
             ingredient_dict.pop(k, None)
 
@@ -369,8 +379,6 @@ class RecipeGenerator:
         for sentence in output_sents:
             print(str(step_count) + '. ' + sentence)
             step_count += 1
-
-        print(str(step_count) + '. ' + "Bake until done.")
 
     def generate_recipe(self, match_ingredients_to_instructions = False):
         ingredient_dict = self.get_ingredients_from_user()
