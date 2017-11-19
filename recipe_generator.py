@@ -362,7 +362,7 @@ class RecipeGenerator:
 
     def print_recipe(self, ingredient_dict, output_sents):
         print()
-        print("Insert title here")
+        print(self.generate_title(ingredient_dict))
         print()
         print("Ingredients!")
         for k,v in ingredient_dict.items():
@@ -384,6 +384,30 @@ class RecipeGenerator:
         ingredient_dict = self.get_ingredients_from_user()
         output_sents, ingredient_dict = self.generate_output_sentences(ingredient_dict, match_ingredients_to_instructions)
         self.print_recipe(ingredient_dict, output_sents)
+
+
+    def generate_title(self,ingredient_dict):
+          minimum = 100
+          specialIng = []
+          index = 0
+          ingredient_list = list(ingredient_dict.keys())
+          for i in range(0,len(ingredient_list)):
+              if len(self.probDictAmt[ingredient_list[i]]) < minimum:
+                  minimum = len(self.probDictAmt[ingredient_list[i]])
+                  index = i
+
+          specialIng.append(ingredient_list[index])
+
+          for i in range(0,len(ingredient_list)):
+              if len(self.probDictAmt[ingredient_list[i]]) == minimum and i != index:
+                  specialIng.append(ingredient_list[i])
+
+
+          listOfAdj = ["Delicious", "Moist", "Fancy", "Simple", "Wonderful", "Special", "Traditional", "Sweet", "Homemade"]
+          adj = listOfAdj[randint(0,len(listOfAdj)-1)]
+          mainIng = "-".join(specialIng)
+          title = adj + " " + mainIng + " " + "cake"
+          return title
 
     def isfloat(self, value):
         '''
