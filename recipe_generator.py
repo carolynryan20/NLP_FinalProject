@@ -108,10 +108,13 @@ class RecipeGenerator:
                     if amountStr2[len(amountStr2) - 1:len(amountStr2)] == 's':
                         amountStr2 = amountStr2[0:len(amountStr2) - 1]
 
-                    if len(amountStr2.split()) > 1 and not "/" in amountStr2.split()[1]:
-                        amountStr2 = amountStr2.split()[0]
+                    if len(numberStr.split()) > 1 and not "/" in numberStr.split()[1]:
+                        numberStr = numberStr.split()[0]
 
                     numberStr = numberStr[0:len(numberStr) - 1]
+
+                    if amountStr2.isdigit():
+                        continue
 
                     if ingredientStr[len(ingredientStr) - 1:len(ingredientStr)] == ' ':
                         ingredientStr = ingredientStr[0:len(ingredientStr) - 1]
@@ -275,7 +278,7 @@ class RecipeGenerator:
             if ingredient in self.probDictAmt and ingredient not in ingredient_dict:
                 amt = self.returnQuant(ingredient)
                 units = self.returnUnit(ingredient)
-                print("Use {} {} {} in recipe".format(amt, units, ingredient))  # NEED UNITS
+                # print("Use {} {} {} in recipe".format(amt, units, ingredient))  # NEED UNITS
                 ingredient_dict[ingredient] = [units, amt]
             elif ingredient in ingredient_dict:
                 print("You have already used this in your cake!")
@@ -312,6 +315,7 @@ class RecipeGenerator:
                     preheat_sents.append((' ').join(sentence))
         output_sents.append(choice(preheat_sents))
 
+        pop_list = []
         for k, v in ingredient_dict.items():
             ingredient_sents = []
             for recipe in instruction_corpus:
@@ -323,7 +327,10 @@ class RecipeGenerator:
                 output_sents.append(choice(ingredient_sents))
             else:
                 print('Could not generate instructions for ingredient ' + k + '!')
-                ingredient_dict.pop(k, None)
+                pop_list.append(k)
+
+        for k in pop_list:
+            ingredient_dict.pop(k, None)
 
         # print(output_sents)
         if match_ingredients_to_instructions:
@@ -342,8 +349,6 @@ class RecipeGenerator:
                     ingredient_dict[food] = [units, amt]
                     new_ing_dict[food] = [units, amt]
                     foods_in_sent.append(food)
-        # for k,v in new_ing_dict.items():
-        #     print(k, v)
         return ingredient_dict
 
     def print_recipe(self, ingredient_dict, output_sents):
